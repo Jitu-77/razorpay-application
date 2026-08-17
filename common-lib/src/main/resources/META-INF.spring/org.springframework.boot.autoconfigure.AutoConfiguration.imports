@@ -1,0 +1,5 @@
+com.jitu.razorpay_application.common_lib.audit.SharedAuditAutoConfiguration
+com.jitu.razorpay_application.common_lib.config.SharedKafkaAutoConfiguration
+com.jitu.razorpay_application.common_lib.idempotency.SharedResilienceAutoConfiguration
+com.jitu.razorpay_application.common_lib.exceptions.SharedExceptionAutoConfiguration
+com.jitu.razorpay_application.common_lib.uti.SharedSecurityAutoConfiguration
