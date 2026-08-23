@@ -15,7 +15,7 @@ import java.util.UUID;
 public class BankTransferProcessorImpl implements BankTransferProcessor{
 
     @Override
-    public BankTransferProcessor initiate(UUID settlementId, UUID merchantId, Money amount,
+    public BankTransferResult initiate(UUID settlementId, UUID merchantId, Money amount,
                                        String bankAccount, String ifsc) {
 
         // Call the Bank API

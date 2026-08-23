@@ -11,6 +11,7 @@ package com.jitu.razorpay_application.operations_service.webhook;
 import com.jitu.razorpay_application.common_lib.dto.WebhookTarget;
 import com.jitu.razorpay_application.common_lib.enums.WebhookEventStatus;
 import com.jitu.razorpay_application.common_lib.uti.SignerUtil;
+import com.jitu.razorpay_application.operations_service.client.MerchantServiceClient;
 import com.jitu.razorpay_application.operations_service.entity.WebhookEvent;
 import com.jitu.razorpay_application.operations_service.repository.WebhookEventRepository;
 
@@ -35,13 +36,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WebhookKafkaConsumer {
 
-    private final MerchantLookupService merchantLookupService;
+//    private final MerchantLookupService merchantLookupService;
     private final ObjectMapper objectMapper;
     private final SignerUtil signerUtil;
     private final WebhookEventRepository webhookEventRepository;
     private final WebhookRetryQueue retryQueue;
     private final WebhookDlqRecorder dlqRecorder;
-
+    private  final MerchantServiceClient merchantServiceClient;
     @KafkaListener(topics = {
             "${app.kafka.topics.payments:payments.events}",
             "${app.kafka.topics.orders:orders.events}",
@@ -63,7 +64,8 @@ public class WebhookKafkaConsumer {
 
             UUID merchantId = UUID.fromString(merchantIdRaw.toString());
 
-            List<WebhookTarget> targets = merchantLookupService.getActiveConfigsForEvent(merchantId, eventType);
+//            List<WebhookTarget> targets = merchantLookupService.getActiveConfigsForEvent(merchantId, eventType);
+            List<WebhookTarget> targets = merchantServiceClient.getActiveConfigsForEvent(merchantId, eventType);
             if (targets.isEmpty()) {
                 log.debug("No webhook target was found, skipping event: {}", eventType);
                 ack.acknowledge();
