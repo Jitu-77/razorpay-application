@@ -1,0 +1,17 @@
+package com.jitu.razorpay_application.payment_service.client;
+
+//import com.codingshuttle.razorpay.common_lib.dto.FindOrCreateCustomerRequest;
+import com.jitu.razorpay_application.common_lib.dto.FindOrCreateCustomerRequest;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.UUID;
+
+@FeignClient(name = "merchant-service", path = "/internal/customers")
+public interface CustomerServiceClient {
+
+    @PostMapping("/find-or-create")
+    UUID findOrCreate(@RequestBody FindOrCreateCustomerRequest   request);
+
+}

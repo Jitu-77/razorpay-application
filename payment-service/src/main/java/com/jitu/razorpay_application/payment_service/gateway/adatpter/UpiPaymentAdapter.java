@@ -9,13 +9,13 @@ package com.jitu.razorpay_application.payment_service.gateway.adatpter;
 //import com.jitu.RazorPay.payment.processor.dto.PaymentProcessorResponse;
 
 
+import com.jitu.razorpay_application.common_lib.dto.PaymentProcessorRequest;
+import com.jitu.razorpay_application.common_lib.dto.PaymentProcessorResponse;
 import com.jitu.razorpay_application.common_lib.enums.PaymentMethod;
 import com.jitu.razorpay_application.payment_service.gateway.PaymentAdapter;
 import com.jitu.razorpay_application.payment_service.gateway.dto.PaymentRequest;
 import com.jitu.razorpay_application.payment_service.gateway.dto.PaymentResult;
 import com.jitu.razorpay_application.payment_service.processor.PaymentProcessorRouter;
-import com.jitu.razorpay_application.payment_service.processor.dto.PaymentProcessorRequest;
-import com.jitu.razorpay_application.payment_service.processor.dto.PaymentProcessorResponse;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: config-service
+
+  cloud:
+    config.server.git:
+      uri: https://github.com/Jitu-77/distributed-razrorpay-config
+      username: Jitu-77
+      password: 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
+      default-label: main
+
+server.port: 8888

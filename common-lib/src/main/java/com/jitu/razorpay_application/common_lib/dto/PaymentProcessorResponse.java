@@ -1,4 +1,4 @@
-package com.jitu.razorpay_application.payment_service.processor.dto;
+package com.jitu.razorpay_application.common_lib.dto;
 
 public sealed interface PaymentProcessorResponse permits
         PaymentProcessorResponse.Pending,

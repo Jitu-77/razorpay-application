@@ -1,4 +1,4 @@
-package com.jitu.razorpay_application.payment_service.processor.dto;
+package com.jitu.razorpay_application.common_lib.dto;
 
 //import com.jitu.RazorPay.common.entity.Money;
 //import com.jitu.RazorPay.common.enums.PaymentMethod;

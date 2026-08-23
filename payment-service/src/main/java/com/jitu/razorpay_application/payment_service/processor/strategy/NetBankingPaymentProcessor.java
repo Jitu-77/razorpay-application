@@ -5,10 +5,10 @@ package com.jitu.razorpay_application.payment_service.processor.strategy;
 //import com.jitu.RazorPay.payment.processor.dto.PaymentProcessorRequest;
 //import com.jitu.RazorPay.payment.processor.dto.PaymentProcessorResponse;
 
+import com.jitu.razorpay_application.common_lib.dto.PaymentProcessorRequest;
+import com.jitu.razorpay_application.common_lib.dto.PaymentProcessorResponse;
 import com.jitu.razorpay_application.common_lib.uti.RandomizerUtil;
 import com.jitu.razorpay_application.payment_service.processor.PaymentProcessor;
-import com.jitu.razorpay_application.payment_service.processor.dto.PaymentProcessorRequest;
-import com.jitu.razorpay_application.payment_service.processor.dto.PaymentProcessorResponse;
 import org.springframework.stereotype.Component;
 
 @Component

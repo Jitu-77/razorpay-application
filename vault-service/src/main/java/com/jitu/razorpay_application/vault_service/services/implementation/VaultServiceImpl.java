@@ -17,6 +17,8 @@ package com.jitu.razorpay_application.vault_service.services.implementation;
 //import com.jitu.RazorPay.vault.services.VaultService;
 
 
+import com.jitu.razorpay_application.common_lib.dto.PaymentProcessorRequest;
+import com.jitu.razorpay_application.common_lib.dto.PaymentProcessorResponse;
 import com.jitu.razorpay_application.common_lib.entity.Money;
 import com.jitu.razorpay_application.common_lib.enums.CardBrand;
 import com.jitu.razorpay_application.common_lib.exceptions.ResourceNotFoundException;
@@ -26,6 +28,7 @@ import com.jitu.razorpay_application.vault_service.dto.request.TokenizeRequest;
 import com.jitu.razorpay_application.vault_service.dto.response.TokenizeResponse;
 import com.jitu.razorpay_application.vault_service.entity.CardToken;
 import com.jitu.razorpay_application.vault_service.entity.VaultCard;
+import com.jitu.razorpay_application.vault_service.processor.CardPaymentProcessor;
 import com.jitu.razorpay_application.vault_service.repository.CardTokenRepository;
 import com.jitu.razorpay_application.vault_service.repository.VaultCardRepository;
 import com.jitu.razorpay_application.vault_service.services.VaultService;
@@ -51,8 +54,10 @@ public class VaultServiceImpl implements VaultService {
     private final CardTokenRepository cardTokenRepository;
     private final VaultCardRepository vaultCardRepository;
     private final BytesEncryptor dekEncrypter;
-    private final PaymentProcessorRouter paymentProcessorRouter;
+//    private final PaymentProcessorRouter paymentProcessorRouter;
+    private  final CardPaymentProcessor cardPaymentProcessor;
     @Override
+    @Transactional
     public TokenizeResponse tokenize(TokenizeRequest request, UUID merchantId) {
         String lastFour = request.pan().substring(request.pan().length() - 4);
         String bin = request.pan().substring(0, 6);
@@ -104,7 +109,8 @@ public class VaultServiceImpl implements VaultService {
             PaymentProcessorRequest paymentProcessorRequest = PaymentProcessorRequest
                     .card(paymentId, pan, expiry, amount, methodDetails);
 
-            PaymentProcessorResponse response = paymentProcessorRouter.charge(paymentProcessorRequest);
+//            PaymentProcessorResponse response = paymentProcessorRouter.charge(paymentProcessorRequest);
+            PaymentProcessorResponse response = cardPaymentProcessor.charge(paymentProcessorRequest);
 
             log.info("Vault charge registered, token={}****", token.substring(0, 4));
 

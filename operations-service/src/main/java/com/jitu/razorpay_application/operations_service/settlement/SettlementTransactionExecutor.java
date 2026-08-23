@@ -121,9 +121,9 @@ public class SettlementTransactionExecutor {
 
 
             // also updating the payment service
-            List<UUID> paymentId =unsettledPayments.stream()
-                    .map(PaymentSettlementView::paymentId).toList();
-            paymentServiceClient.markSettled(paymentId);
+//            List<UUID> paymentId =unsettledPayments.stream()
+//                    .map(PaymentSettlementView::paymentId).toList();
+//            paymentServiceClient.markSettled(paymentId);
 
 //            SettlementBankDetails settlementBankDetails = merchantLookupService.getSettlementBankDetails(merchantId);
             SettlementBankDetails settlementBankDetails = merchantServiceClient.getSettlementBankDetails(merchantId);
@@ -158,6 +158,16 @@ public class SettlementTransactionExecutor {
             settlement.setStatus(SettlementStatus.PROCESSED);
             settlement.setProcessedAt(LocalDateTime.now());
             settlementRepository.save(settlement);
+
+
+            // also updating the payment service for mark settled
+            List<SettlementPayment> settlementPaymentList = settlementPaymentRepository.findBySettlement(settlement);
+            List<UUID> paymentIds = settlementPaymentList.stream()
+                    .map(SettlementPayment::getId)
+                    .map(SettlementPaymentId::getPaymentId)
+                    .toList();
+            paymentServiceClient.markSettled(paymentIds);
+
             log.info("Settlement processed successfully, settlementId: {}", settlement.getId());
             outboxEventPublisher.publish(EventAggregateType.SETTLEMENT, settlementId,
                     "SETTLEMENT_PROCESSED", Map.of(
@@ -167,6 +177,7 @@ public class SettlementTransactionExecutor {
                             "settlementAmount", settlement.getNetAmount().getAmountUnits(),
                             "settlementCurrency", settlement.getNetAmount().getCurrency()
                     ));
+
         } else { // failed
             settlement.setStatus(SettlementStatus.FAILED);
             settlement.setFailureReason(errorCode+" : "+errorDescription);

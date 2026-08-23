@@ -21,11 +21,13 @@ package com.jitu.razorpay_application.payment_service.service.implementation;
 
 
 
+import com.jitu.razorpay_application.common_lib.dto.FindOrCreateCustomerRequest;
 import com.jitu.razorpay_application.common_lib.enums.EventAggregateType;
 import com.jitu.razorpay_application.common_lib.enums.OrderStatus;
 import com.jitu.razorpay_application.common_lib.exceptions.BusinessRuleViolationException;
 import com.jitu.razorpay_application.common_lib.exceptions.DuplicateResourceException;
 import com.jitu.razorpay_application.common_lib.exceptions.ResourceNotFoundException;
+import com.jitu.razorpay_application.payment_service.client.CustomerServiceClient;
 import com.jitu.razorpay_application.payment_service.dto.request.CreateOrderRequest;
 import com.jitu.razorpay_application.payment_service.dto.response.OrderResponse;
 import com.jitu.razorpay_application.payment_service.dto.response.PaymentResponse;
@@ -60,7 +62,8 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
     private final OrderMapper orderMapper;
-    private final CustomerService customerService;
+//    private final CustomerService customerService;
+    private  final CustomerServiceClient customerServiceClient;
     private final OutboxEventPublisher eventPublisher;
 
     @Value("${payment.order.default-order-expiry-minutes:30}")
@@ -77,10 +80,18 @@ public class OrderServiceImpl implements OrderService {
 
         UUID customerId = null;
         if (request.customer() != null) {
-            customerId = customerService.findOrCreate(merchantId,
-                    request.customer().email(),
-                    request.customer().name(),
-                    request.customer().phone()
+//            customerId = customerService.findOrCreate(merchantId,
+//                    request.customer().email(),
+//                    request.customer().name(),
+//                    request.customer().phone()
+//            );
+            customerId = customerServiceClient.findOrCreate(
+                    new FindOrCreateCustomerRequest(
+                            merchantId,
+                            request.customer().email(),
+                            request.customer().name(),
+                            request.customer().phone()
+                    )
             );
         }
 

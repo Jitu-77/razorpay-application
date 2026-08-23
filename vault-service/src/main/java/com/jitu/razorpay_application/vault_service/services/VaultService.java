@@ -5,6 +5,7 @@ package com.jitu.razorpay_application.vault_service.services;
 //import com.jitu.RazorPay.vault.dto.request.TokenizeRequest;
 //import com.jitu.RazorPay.vault.dto.response.TokenizeResponse;
 
+import com.jitu.razorpay_application.common_lib.dto.PaymentProcessorResponse;
 import com.jitu.razorpay_application.common_lib.entity.Money;
 import com.jitu.razorpay_application.vault_service.dto.request.TokenizeRequest;
 import com.jitu.razorpay_application.vault_service.dto.response.TokenizeResponse;
