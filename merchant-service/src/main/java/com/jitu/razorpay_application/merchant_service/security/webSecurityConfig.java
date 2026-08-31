@@ -1,74 +1,88 @@
 package com.jitu.razorpay_application.merchant_service.security;
 
+import com.jitu.razorpay_application.common_lib.idempotency.IdempotencyFilter;
+import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
+//import org.springframework.security.authentication.AuthenticationManager;
+//import org.springframework.security.authentication.ProviderManager;
+//import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+//import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+//import org.springframework.security.config.http.SessionCreationPolicy;
+//import org.springframework.security.web.SecurityFilterChain;
+//import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 @Configuration
 @RequiredArgsConstructor
 public class webSecurityConfig {
 
-    private static final String[] JWT_ROUTES = {"/v1/auth/**", "/v1/merchants/**", "/v1/admin/**", "/actuator/**","/webhook/**"};
-    private static final String[] API_KEY_ROUTES = {"/v1/orders/**", "/v1/payments/**", "/v1/vault/**"};
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
+//    private static final String[] JWT_ROUTES = {"/v1/auth/**", "/v1/merchants/**", "/v1/admin/**", "/actuator/**","/webhook/**"};
+//    private static final String[] API_KEY_ROUTES = {"/v1/orders/**", "/v1/payments/**", "/v1/vault/**"};
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain jwtChain(HttpSecurity http) {
-        return http
-                .securityMatcher(JWT_ROUTES)
-                .csrf(csrf -> csrf.disable())
-                //make session management stateless
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                //making all routes access
-                .authorizeHttpRequests(auth -> auth
-//                        .anyRequest().permitAll()
-                        .requestMatchers("/v1/auth/signup", "/v1/auth/login","/webhook/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                //disable form
-//                .formLogin(form -> form.disable())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
+//    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+//    private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 
-
-    @Bean
-    @Order(2)
-    public SecurityFilterChain apiKeyChain(HttpSecurity http) {
-        return http
-                .securityMatcher(API_KEY_ROUTES)
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
+    private final IdempotencyFilter idempotencyFilter;
+//    @Bean
+//    @Order(1)
+//    public SecurityFilterChain jwtChain(HttpSecurity http) {
+//        return http
+//                .securityMatcher(JWT_ROUTES)
+//                .csrf(csrf -> csrf.disable())
+//                //make session management stateless
+//                .sessionManagement(session -> session
+//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                //making all routes access
+//                .authorizeHttpRequests(auth -> auth
+////                        .anyRequest().permitAll()
+//                        .requestMatchers("/v1/auth/signup", "/v1/auth/login","/webhook/**").permitAll()
+//                        .anyRequest().authenticated()
+//                )
+//                //disable form
+////                .formLogin(form -> form.disable())
+//                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+//                .build();
+//    }
+//
+//
+//    @Bean
+//    @Order(2)
+//    public SecurityFilterChain apiKeyChain(HttpSecurity http) {
+//        return http
+//                .securityMatcher(API_KEY_ROUTES)
+//                .csrf(csrf -> csrf.disable())
+//                .sessionManagement(session -> session
+//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .authorizeHttpRequests(auth -> auth
+//                        .anyRequest().authenticated()
+//                )
+//                .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+//                .build();
+//    }
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(MerchantUserDetailsService userDetailsService,
-                                                       PasswordEncoder passwordEncoder){
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
-        return new ProviderManager(provider);
+    public FilterRegistrationBean<Filter> idempotencyFilterRegistration() {
+        FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>(idempotencyFilter);
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE+2);
+        registration.addUrlPatterns("/*");
+        return registration;
     }
+
+
+//    @Bean
+//    public AuthenticationManager authenticationManager(MerchantUserDetailsService userDetailsService,
+//                                                       PasswordEncoder passwordEncoder){
+//        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+//        provider.setPasswordEncoder(passwordEncoder);
+//        return new ProviderManager(provider);
+//    }
 }

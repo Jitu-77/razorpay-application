@@ -1,6 +1,11 @@
 package com.jitu.razorpay_application.common_lib.exceptions;
 
+import lombok.Getter;
+
+@Getter
 public class BusinessRuleViolationException extends  RuntimeException{
+
+
     private final String errorCode;
 
 

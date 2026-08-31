@@ -1,4 +1,6 @@
 package com.jitu.razorpay_application.common_lib.idempotency;
+import com.jitu.razorpay_application.common_lib.cache.ApiKeyCache;
+import com.jitu.razorpay_application.common_lib.cache.RedisApiKeyCache;
 import com.jitu.razorpay_application.common_lib.ratelimit.*;
 import com.jitu.razorpay_application.common_lib.context.MerchantContext;
 import com.jitu.razorpay_application.common_lib.ratelimit.FixedWindowRateLimiter;
@@ -9,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import tools.jackson.databind.ObjectMapper;
 
 @AutoConfiguration
 public class SharedResilienceAutoConfiguration {
@@ -17,6 +20,10 @@ public class SharedResilienceAutoConfiguration {
         return new StringRedisTemplate(connectionFactory);
     }
 
+    @Bean
+    public ApiKeyCache apiKeyCache(StringRedisTemplate stringRedisTemplate, ObjectMapper objectMapper) {
+        return new RedisApiKeyCache(stringRedisTemplate, objectMapper);
+    }
 
     @Bean
     public IdempotencyStore idempotencyStore(StringRedisTemplate stringRedisTemplate) {
