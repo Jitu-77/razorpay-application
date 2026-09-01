@@ -41,6 +41,8 @@ import com.jitu.razorpay_application.payment_service.repository.PaymentRepositor
 import com.jitu.razorpay_application.payment_service.service.OrderService;
 
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,6 +73,8 @@ public class OrderServiceImpl implements OrderService {
     
     @Override
     @Transactional
+    @CircuitBreaker(name = "merchant-service")
+    @Retry(name = "merchant-service")
     public OrderResponse create(UUID merchantId, CreateOrderRequest request) {
 
             if(request.receipt()!= null &&

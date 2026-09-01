@@ -13,6 +13,8 @@ import com.jitu.razorpay_application.payment_service.gateway.PaymentAdapter;
 import com.jitu.razorpay_application.payment_service.gateway.dto.PaymentRequest;
 import com.jitu.razorpay_application.payment_service.gateway.dto.PaymentResult;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,6 +28,8 @@ public class CardPaymentAdapter implements PaymentAdapter {
 //    private final VaultService vaultService;
 private final VaultServiceClient vaultServiceClient;
     @Override
+    @CircuitBreaker(name = "vault-service")
+    @Retry(name = "vault-service")
     public PaymentResult initiate(PaymentRequest paymentRequest) {
 //        String token = (String) paymentRequest.methodDetails().get("token");
 //                PaymentProcessorResponse response = vaultService.charge(

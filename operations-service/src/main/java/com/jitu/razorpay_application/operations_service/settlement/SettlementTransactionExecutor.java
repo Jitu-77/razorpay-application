@@ -58,12 +58,18 @@ public class SettlementTransactionExecutor {
     private final BankTransferProcessor bankTransferProcessor;
     // Todo: publisher inside it's own db
     private final OutboxEventPublisher outboxEventPublisher;
-    private  final MerchantServiceClient merchantServiceClient;
-    private  final PaymentServiceClient paymentServiceClient;
+//    private  final MerchantServiceClient merchantServiceClient;
+//    private  final PaymentServiceClient paymentServiceClient;
+
+    private final SettlementIntegrationGateway settlementIntegrationGateway;
+
     @Transactional
     public void processForMerchant(UUID merchantId, LocalDate settlementDate) {
 //        List<Payment> unsettledPayments = paymentLookupService.findUnsettledCapturedPayments(merchantId);
-        List<PaymentSettlementView> unsettledPayments = paymentServiceClient.findUnsettledCaptured(merchantId);
+
+//        List<PaymentSettlementView> unsettledPayments = paymentServiceClient.findUnsettledCaptured(merchantId);
+//        replace by wrapper
+        List<PaymentSettlementView> unsettledPayments = settlementIntegrationGateway.findUnsettledCaptured(merchantId);
         if (unsettledPayments.isEmpty()) return;
 
         log.info("Processing {} unsettled payments for merchantId: {} on {} date",
@@ -126,7 +132,8 @@ public class SettlementTransactionExecutor {
 //            paymentServiceClient.markSettled(paymentId);
 
 //            SettlementBankDetails settlementBankDetails = merchantLookupService.getSettlementBankDetails(merchantId);
-            SettlementBankDetails settlementBankDetails = merchantServiceClient.getSettlementBankDetails(merchantId);
+//            SettlementBankDetails settlementBankDetails = merchantServiceClient.getSettlementBankDetails(merchantId);
+            SettlementBankDetails settlementBankDetails = settlementIntegrationGateway.getSettlementBankDetails(merchantId);
             BankTransferResult bankTransferResult = bankTransferProcessor.initiate(settlement.getId(), merchantId, netAmount,
                     settlementBankDetails.accountNumber(), settlementBankDetails.ifsc());
 
@@ -166,7 +173,8 @@ public class SettlementTransactionExecutor {
                     .map(SettlementPayment::getId)
                     .map(SettlementPaymentId::getPaymentId)
                     .toList();
-            paymentServiceClient.markSettled(paymentIds);
+//            paymentServiceClient.markSettled(paymentIds);
+            settlementIntegrationGateway.markSettled(paymentIds);
 
             log.info("Settlement processed successfully, settlementId: {}", settlement.getId());
             outboxEventPublisher.publish(EventAggregateType.SETTLEMENT, settlementId,

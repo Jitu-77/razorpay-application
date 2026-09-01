@@ -46,6 +46,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -110,7 +112,10 @@ public class VaultServiceImpl implements VaultService {
                     .card(paymentId, pan, expiry, amount, methodDetails);
 
 //            PaymentProcessorResponse response = paymentProcessorRouter.charge(paymentProcessorRequest);
-            PaymentProcessorResponse response = cardPaymentProcessor.charge(paymentProcessorRequest);
+//            PaymentProcessorResponse response = cardPaymentProcessor.charge(paymentProcessorRequest);
+            // for bulk head pattern
+            PaymentProcessorResponse response = cardPaymentProcessor.charge(paymentProcessorRequest)
+                    .get(5, TimeUnit.SECONDS);
 
             log.info("Vault charge registered, token={}****", token.substring(0, 4));
 

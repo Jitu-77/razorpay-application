@@ -35,6 +35,7 @@ import com.jitu.razorpay_application.payment_service.mapper.PaymentMapper;
 import com.jitu.razorpay_application.payment_service.outbox.OutboxEventPublisher;
 import com.jitu.razorpay_application.payment_service.repository.OrderRepository;
 import com.jitu.razorpay_application.payment_service.repository.PaymentRepository;
+import com.jitu.razorpay_application.payment_service.saga.PaymentAuthorizationRecorder;
 import com.jitu.razorpay_application.payment_service.service.PaymentService;
 import com.jitu.razorpay_application.payment_service.stateMachine.PaymentTransitionService;
 
@@ -58,87 +59,110 @@ public class PaymentServiceImpl implements PaymentService {
     public final PaymentMapper paymentMapper;
     public final PaymentTransitionService paymentTransitionService;
     private final OutboxEventPublisher eventPublisher;
-    @Override
-    @Transactional
-    // (isolation = Isolation.REPEATABLE_READ) // not thread safe Pessimistic Locking will take care
-    // via REPEATABLE_READ we can still read but not write
-    public PaymentResponse intitiate(UUID merchantId, PaymentInitRequest paymentInitRequest) {
-        log.info(" ORDERID "+paymentInitRequest.orderId()+" MerchangtID "+merchantId);
-        //not thread safe-------------
-//        OrderRecord orderRecord = orderRepository.findByIdAndMerchantId(paymentInitRequest.orderId(),
-//                merchantId).orElseThrow(
-//                ()-> new ResourceNotFoundException("Order", paymentInitRequest.orderId())
+    private final PaymentAuthorizationRecorder paymentAuthorizationRecorder;
+
+    //applying saga pattern------------------
+//    @Override
+//    @Transactional
+//    // (isolation = Isolation.REPEATABLE_READ) // not thread safe Pessimistic Locking will take care
+//    // via REPEATABLE_READ we can still read but not write
+//    public PaymentResponse intitiate(UUID merchantId, PaymentInitRequest paymentInitRequest) {
+//        log.info(" ORDERID "+paymentInitRequest.orderId()+" MerchangtID "+merchantId);
+//        //not thread safe-------------
+////        OrderRecord orderRecord = orderRepository.findByIdAndMerchantId(paymentInitRequest.orderId(),
+////                merchantId).orElseThrow(
+////                ()-> new ResourceNotFoundException("Order", paymentInitRequest.orderId())
+////        );
+//
+//        // for pessimistic locking ---------------
+//        OrderRecord orderRecord = orderRepository.findByIdAndMerchantIdForUpdate(paymentInitRequest.orderId(), merchantId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Order", paymentInitRequest.orderId()));
+//
+//        if(orderRecord.getOrderStatus()!= OrderStatus.CREATED && orderRecord.getOrderStatus() != OrderStatus.ATTEMPTED){
+//            throw new BusinessRuleViolationException("ORDER_NOT_PAYABLE",
+//                    "Order cannot accept payment in status: "+orderRecord.getOrderStatus());
+//        }
+//
+//        orderRecord.setOrderStatus(OrderStatus.ATTEMPTED);
+//        orderRecord.setAttempts(orderRecord.getAttempts()+1);
+//
+//        Payment payment = Payment.builder()
+//                .order(orderRecord)
+//                .merchantId(merchantId)
+//                .amount(orderRecord.getAmount())
+//                .status(PaymentStatus.CREATED)// initiating the flow so its ok
+//                .idempotencyKey(UUID.randomUUID().toString()) //TODO: idempotency
+//                .method(paymentInitRequest.method())
+//                .methodDetails(paymentInitRequest.methodDetails())
+//                .build();
+//
+//        payment =   paymentRepository.save(payment);
+//        // now for Payment gateway settings --------------------------------------
+//        PaymentRequest paymentRequest = new PaymentRequest(payment.getId(),
+//                paymentInitRequest.orderId(), merchantId,
+//                orderRecord.getAmount(), paymentInitRequest.method(),
+//                paymentInitRequest.methodDetails());
+//        // need to go to transit to this state FIRST before we can transit to some other state -- AUTHORIZING
+//        paymentTransitionService.apply(payment, PaymentEvent.AUTHORIZE_ATTEMPT);
+//
+//        PaymentResult paymentResult =  paymentGatewayRouter.initiate(paymentRequest);
+//        //------------------------------------------------------------------------
+//
+//        switch (paymentResult){
+//            case PaymentResult.Pending pending -> payment.setProcessorReference(pending.registrationRef());
+//            case PaymentResult.Failure failure ->{
+////                payment.setStatus(PaymentStatus.FAILED);
+//                paymentTransitionService.apply(payment, PaymentEvent.AUTHORIZE_FAIL);
+//                payment.setErrorCode(failure.errorCode());
+//                payment.setErrorDescription(failure.errorDescription());
+//            }
+//            case PaymentResult.Success success -> {
+//                log.warn("Invalid state");
+//                return null;
+//            }
+//        }
+//
+//        payment = paymentRepository.save(payment);
+//        orderRepository.save(orderRecord);
+//        // TODO: send an outbox (kafka event)
+//        // save to outbox for kafka  ----------
+//        eventPublisher.publish(EventAggregateType.PAYMENT, payment.getId(),
+//                "PAYMENT_CREATED",
+//                Map.of("orderId", orderRecord.getId().toString(),
+//                        "paymentId", payment.getId().toString(),
+//                        "merchantId", merchantId.toString(),
+//                        "paymentStatus", payment.getStatus().name(),
+//                        "amountUnits", orderRecord.getAmount().getAmountUnits(),
+//                        "amountCurrency", orderRecord.getAmount().getCurrency(),
+//                        "paymentMethod", payment.getMethod()
+//                )
 //        );
+//        // save to outbox for kafka ----------
+//
+//
+//
+//        return paymentMapper.toResponse(payment);
+//    }
+//applying saga pattern for the above method ------------------
 
-        // for pessimistic locking ---------------
-        OrderRecord orderRecord = orderRepository.findByIdAndMerchantIdForUpdate(paymentInitRequest.orderId(), merchantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", paymentInitRequest.orderId()));
-
-        if(orderRecord.getOrderStatus()!= OrderStatus.CREATED && orderRecord.getOrderStatus() != OrderStatus.ATTEMPTED){
-            throw new BusinessRuleViolationException("ORDER_NOT_PAYABLE",
-                    "Order cannot accept payment in status: "+orderRecord.getOrderStatus());
-        }
-
-        orderRecord.setOrderStatus(OrderStatus.ATTEMPTED);
-        orderRecord.setAttempts(orderRecord.getAttempts()+1);
-
-        Payment payment = Payment.builder()
-                .order(orderRecord)
-                .merchantId(merchantId)
-                .amount(orderRecord.getAmount())
-                .status(PaymentStatus.CREATED)// initiating the flow so its ok
-                .idempotencyKey(UUID.randomUUID().toString()) //TODO: idempotency
-                .method(paymentInitRequest.method())
-                .methodDetails(paymentInitRequest.methodDetails())
-                .build();
-
-        payment =   paymentRepository.save(payment);
-        // now for Payment gateway settings --------------------------------------
-        PaymentRequest paymentRequest = new PaymentRequest(payment.getId(),
-                paymentInitRequest.orderId(), merchantId,
-                orderRecord.getAmount(), paymentInitRequest.method(),
+@Override
+public PaymentResponse intitiate(UUID merchantId, PaymentInitRequest paymentInitRequest) {
+    Payment payment = paymentAuthorizationRecorder.recordPayment(merchantId, paymentInitRequest);
+    PaymentRequest paymentRequest = new PaymentRequest(payment.getId(),
+               paymentInitRequest.orderId(), merchantId,
+                    payment.getAmount(), paymentInitRequest.method(),
                 paymentInitRequest.methodDetails());
-        // need to go to transit to this state FIRST before we can transit to some other state -- AUTHORIZING
-        paymentTransitionService.apply(payment, PaymentEvent.AUTHORIZE_ATTEMPT);
-
-        PaymentResult paymentResult =  paymentGatewayRouter.initiate(paymentRequest);
-        //------------------------------------------------------------------------
-
-        switch (paymentResult){
-            case PaymentResult.Pending pending -> payment.setProcessorReference(pending.registrationRef());
-            case PaymentResult.Failure failure ->{
-//                payment.setStatus(PaymentStatus.FAILED);
-                paymentTransitionService.apply(payment, PaymentEvent.AUTHORIZE_FAIL);
-                payment.setErrorCode(failure.errorCode());
-                payment.setErrorDescription(failure.errorDescription());
-            }
-            case PaymentResult.Success success -> {
-                log.warn("Invalid state");
-                return null;
-            }
-        }
-
-        payment = paymentRepository.save(payment);
-        orderRepository.save(orderRecord);
-        // TODO: send an outbox (kafka event)
-        // save to outbox for kafka  ----------
-        eventPublisher.publish(EventAggregateType.PAYMENT, payment.getId(),
-                "PAYMENT_CREATED",
-                Map.of("orderId", orderRecord.getId().toString(),
-                        "paymentId", payment.getId().toString(),
-                        "merchantId", merchantId.toString(),
-                        "paymentStatus", payment.getStatus().name(),
-                        "amountUnits", orderRecord.getAmount().getAmountUnits(),
-                        "amountCurrency", orderRecord.getAmount().getCurrency(),
-                        "paymentMethod", payment.getMethod()
-                )
-        );
-        // save to outbox for kafka ----------
-
-
-
-        return paymentMapper.toResponse(payment);
+    PaymentResult result;
+    try {
+        result = paymentGatewayRouter.initiate(paymentRequest);
+    } catch (Exception e) {
+        return paymentAuthorizationRecorder.compensateAuthorizationFailure(payment.getId(),
+                "PAYMENT_GATEWAY_ROUTER_UNREACHABLE", e.getMessage());
     }
+    return paymentAuthorizationRecorder.applyGatewayResult(payment.getId(), result);
+}
+
+
 
     @Override
     @Transactional // *
