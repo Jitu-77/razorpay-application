@@ -146,8 +146,17 @@ public class PaymentServiceImpl implements PaymentService {
 //applying saga pattern for the above method ------------------
 
 @Override
-public PaymentResponse intitiate(UUID merchantId, PaymentInitRequest paymentInitRequest) {
-    Payment payment = paymentAuthorizationRecorder.recordPayment(merchantId, paymentInitRequest);
+public PaymentResponse intitiate(UUID merchantId, PaymentInitRequest paymentInitRequest, String idempotencyKey) {
+
+    if (idempotencyKey != null) {
+        var existing = paymentAuthorizationRecorder.findExistingAttempt(merchantId, idempotencyKey);
+        if (existing.isPresent()) {
+            log.info("Idempotency replay for paymentId: {}", existing.get().id());
+            return existing.get();
+        }
+    }
+
+    Payment payment = paymentAuthorizationRecorder.recordPayment(merchantId, paymentInitRequest,idempotencyKey);
     PaymentRequest paymentRequest = new PaymentRequest(payment.getId(),
                paymentInitRequest.orderId(), merchantId,
                     payment.getAmount(), paymentInitRequest.method(),

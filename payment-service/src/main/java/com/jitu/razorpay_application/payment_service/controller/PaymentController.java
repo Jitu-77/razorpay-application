@@ -27,10 +27,12 @@ public class PaymentController {
     private final MerchantContext merchantContext;
 //    UUID merchantId = UUID.fromString("e81e9b55-3bc4-4e95-b79d-0288df06265f"); //TODO: replace it with MerchantContext
     @PostMapping
-    public ResponseEntity<PaymentResponse> initiatePayment(@Valid @RequestBody PaymentInitRequest paymentInitRequest){
+    public ResponseEntity<PaymentResponse> initiatePayment(@Valid @RequestBody PaymentInitRequest paymentInitRequest,
+    @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey){
+        //idempotencyKey parsed from headers & pass down in methods
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(paymentService.intitiate(merchantContext.getMerchantId(),paymentInitRequest));
+                .body(paymentService.intitiate(merchantContext.getMerchantId(),paymentInitRequest,idempotencyKey));
     }
 
 

@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface PaymentService {
 
-PaymentResponse intitiate(UUID merchantId, PaymentInitRequest paymentInitRequest);
+PaymentResponse intitiate(UUID merchantId, PaymentInitRequest paymentInitRequest, String idempotencyKey);
 
 PaymentResponse capture(UUID merchantId, UUID paymentId);
 void resolveAuthorization(UUID paymentId, boolean approve, String bankRef, String errorCode, String errorDescription);
