@@ -10,3 +10,49 @@ spring:
       default-label: main
 
 server.port: 8888
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    config:
+      enabled: false
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+  metrics:
+    tags:
+      application: ${spring.application.name}
+---
+
+spring:
+  config:
+    activate:
+      on-profile: k8s
+#disabling discovery service
+  cloud:
+    discovery:
+      enabled: false
+
+    config.server.git:
+      uri: ${GIT_CONFIG_REPO}
+      username: ${GIT_USERNAME}
+      password: ${GIT_PASSWORD}
+#as there is o discovery service hece eureka comfig is false for all
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+#service name --zipkin/redis/kafka
+#name space -- razorpay-core
+# helps to resolve domain name for k8's --svc.cluster.local
+management:
+  zipkin:
+    tracing:
+      endpoint: http://zipkin.razorpay-core.svc.cluster.local:9411/api/v2/spans
